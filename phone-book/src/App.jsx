@@ -45,7 +45,7 @@ const App = () => {
   };
   const filterByName = (event) => {
     setFilter(event.target.value);
-    const newArray = displayList.filter((person) => {
+    const newArray = persons.filter((person) => {
       return person.name.toLowerCase().includes(filter);
     });
     setDisplayList(newArray);
