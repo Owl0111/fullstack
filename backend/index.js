@@ -72,6 +72,7 @@ app.post('/api/persons', (request, response) => {
         "number": body.number,
         "id": maxId(),
     }
+    console.log(newPerson);
     if (!newPerson.number) {
         console.log("woot")
         return response.status(400).json({
@@ -89,6 +90,7 @@ app.post('/api/persons', (request, response) => {
             "error": "This person already exists",
         })
     }
+    console.log(persons);
     response.json(newPerson);
     persons = persons.concat(newPerson);
 })
@@ -100,23 +102,26 @@ app.get('/api/persons/:id', (request, response) => {
     }
     else {
         response.status(404).end();
+
     }
 });
 
 app.put('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id);
     console.log(req)
-    persons = persons.map(person => {
-        if (person.id === id) {
-            return req.body
+    for (let i = 0; i < persons.length; i++) {
+        if (id == persons[i].id) {
+            persons[i].name = req.body.name;
+            persons[i].number = req.body.number;
+            res.json(persons[i]);
         }
-        return person;
-    })
+    }
 })
 
 app.delete('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id);
     persons = persons.filter(person => person.id !== id);
+    console.log(persons);
     response.status(204).end();
 })
 app.use(unkownEndpoint);
