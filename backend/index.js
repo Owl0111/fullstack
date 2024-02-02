@@ -103,6 +103,17 @@ app.get('/api/persons/:id', (request, response) => {
     }
 });
 
+app.put('/api/persons/:id', (req, res) => {
+    const id = Number(req.params.id);
+    console.log(req)
+    persons = persons.map(person => {
+        if (person.id === id) {
+            return req.body
+        }
+        return person;
+    })
+})
+
 app.delete('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id);
     persons = persons.filter(person => person.id !== id);
