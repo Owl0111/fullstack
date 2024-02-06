@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://fullstackPractice:01112003@cluster0.vdr2af8.mongodb.net/?retryWrites=true&w=majority";
+const uri = "mongodb+srv://sarthakkalla09:01112003@phonebook.pyrzcpv.mongodb.net/?retryWrites=true&w=majority";
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
@@ -16,3 +16,4 @@ async function run() {
     }
 }
 run().catch(console.dir);
+
