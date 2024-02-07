@@ -1,8 +1,17 @@
+require("dotenv").config();
+const Person = require('./models/person.js');
 const express = require('express')
 const morgan = require('morgan')
 const cors = require("cors");
 const app = express()
-const unkownEndpoint = (req, res) => {
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message);
+    if (error.name === "CastError") {
+        return response.status(400).send({ error: "malformed ID" });
+    }
+    next(error);
+}
+const unknownEndpoint = (req, res) => {
     res.status(404).send(
         {
             error: 'This path does not exist',
@@ -45,86 +54,86 @@ app.get('/', (request, response) => {
 })
 
 app.get('/info', (request, response) => {
-    const date = new Date();
+    const date = Date.now();
     response.send(`Phonebook has info for ${persons.length} people`)
-    console.log(date.getDay(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds);
+    console.log(date);
 })
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Person.find({}).then(result => {
+        console.log(result);
+        response.json(result);
+    })
 })
 
 app.post('/api/persons', (request, response) => {
-    const maxId = () => {
-        const id = persons.length > 0 ? Math.max(...persons.map(person => person.id)) : 0;
-        return id + 1;
-    }
-    const isUnique = person => {
-        for (let a of persons) {
-            if (person.name === a.name) {
-                return false;
-            }
-        }
-        return true;
-    }
-    const body = request.body;
-    const newPerson = {
-        "name": body.name,
-        "number": body.number,
-        "id": maxId(),
-    }
-    console.log(newPerson);
-    if (!newPerson.number) {
-        console.log("woot")
-        return response.status(400).json({
-            "error": "number does not exist",
-        })
-    }
-    if (!newPerson.name) {
-        console.log("woot")
-        return response.status(400).json({
-            "error": "name does not exist",
-        })
-    }
-    if (!(isUnique(newPerson))) {
-        return response.status(400).json({
-            "error": "This person already exists",
-        })
-    }
-    console.log(persons);
-    response.json(newPerson);
-    persons = persons.concat(newPerson);
-})
-app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id);
-    const person = persons.find((person) => person.id === id);
-    if (person) {
-        response.json(person);
-    }
-    else {
-        response.status(404).end();
 
-    }
+    const person = new Person({
+        name: request.body.name,
+        number: request.body.number,
+    })
+    person.save()
+        .then(result =>
+            response.json(result)
+        ).catch(error => {
+            response.status(400).end();
+        }
+        )
+})
+app.get('/api/persons/:id', (request, response, next) => {
+    const id = request.params.id;
+    Person.findById(id).then(person => {
+        if (person) {
+            response.json(person);
+        }
+        else {
+            response.status(404).send({
+                error: 'Person not found'
+            });
+        }
+    }).catch(error => {
+        next(error);
+    });
 });
 
 app.put('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id);
-    console.log(req)
-    for (let i = 0; i < persons.length; i++) {
-        if (id == persons[i].id) {
-            persons[i].name = req.body.name;
-            persons[i].number = req.body.number;
-            res.json(persons[i]);
+    const id = req.params.id;
+    const body = req.body;
+    Person.findByIdAndUpdate(id, body, { new: true }).then(updatedPerson => {
+        if (updatedPerson) {
+            res.json(updatedPerson);
         }
-    }
+        else {
+            res.status(404).send({
+                error: 'Person not found'
+            });
+        }
+    }).catch(error => {
+        res.status(400).send({
+            error: 'Invalid id'
+        });
+    });
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id);
-    persons = persons.filter(person => person.id !== id);
-    console.log(persons);
-    response.status(204).end();
+    const id = request.params.id;
+    Person.findByIdAndDelete(id).then(deletedPerson => {
+        if (deletedPerson) {
+            console.log(deletedPerson)
+            response.status(204).end();
+        }
+        else {
+            response.status(404).send({
+                error: 'Person not found'
+            });
+        }
+    }).catch(error => {
+        response.status(400).send({
+            error: 'Invalid id'
+        });
+    });
 })
-app.use(unkownEndpoint);
+app.use(unknownEndpoint);
+app.use(errorHandler);
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
